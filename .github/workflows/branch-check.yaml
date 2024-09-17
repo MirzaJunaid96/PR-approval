@@ -10,7 +10,7 @@ jobs:
     # if: ${{ github.event.issue.labels.*.name contains 'deployment' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Output issue body (Debug)
         run: |
