@@ -17,11 +17,12 @@ jobs:
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
           echo "ISSUE_URL=${ISSUE_URL}" >> $GITHUB_ENV
-          echo "BRANCH_NAME=$(curl -s ${ISSUE_URL} | jq -r '.body | match("Branch: (.*)") | .captures[0].string')"
+          BRANCH_NAME=$(curl -s ${ISSUE_URL} | jq -r '.body | fromjson | .[] | select(.id == "branch") | .value')
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
 
       - name: Checkout to the specified branch
         run: git checkout ${{ env.BRANCH_NAME }}
+
 
       - name: Build project
         run: |
