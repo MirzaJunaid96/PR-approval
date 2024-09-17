@@ -29,9 +29,9 @@ jobs:
           echo "${ISSUE_BODY}"
 
           # Use grep and awk to extract the branch name
-          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -A 1 '### BRANCH' | awk 'NF' | tail -n1 | xargs)
+          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -A 1 '### BRANCH' | tail -n1 | xargs)
 
-          echo "Extracted Branch Name (for debugging): ${BRANCH_NAME}"
+          echo "Extracted Branch Name: ${BRANCH_NAME}"
           
           # If branch name is empty, raise an error
           if [ -z "$BRANCH_NAME" ]; then
