@@ -11,51 +11,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Output issue body (Debug)
+      - name: Fetch Issue Details
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
-          echo "Issue URL: ${ISSUE_URL}"
-          ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
-          echo "Issue Body (for debugging):"
+          echo "Fetching issue body from: ${ISSUE_URL}"
+          ISSUE_BODY=$(curl -s -H "Accept: application/vnd.github.v3+json" ${ISSUE_URL} | jq -r '.body')
+          
+          # Debug: Output the raw issue body
+          echo "Raw issue body:"
           echo "${ISSUE_BODY}"
 
-      - name: Extract branch name (Improved)
+      - name: Extract branch name
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
-          ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
+          ISSUE_BODY=$(curl -s -H "Accept: application/vnd.github.v3+json" ${ISSUE_URL} | jq -r '.body')
 
-          # Debug the raw issue body
-          echo "Raw ISSUE_BODY content:"
-          echo "${ISSUE_BODY}"
-
-          # Use grep and awk to extract the branch name
-          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -A 1 '### BRANCH' | tail -n1 | xargs)
+          # Extract the branch name from the issue body
+          BRANCH_NAME=$(echo "${ISSUE_BODY}" | sed -n '/### BRANCH/{n;p;}' | xargs)
 
           echo "Extracted Branch Name: ${BRANCH_NAME}"
-          
-          # If branch name is empty, raise an error
+
+          # Fail if no branch name is found
           if [ -z "$BRANCH_NAME" ]; then
             echo "Error: Branch name not found in the issue body."
             exit 1
           fi
           
-          # Set branch name as environment variable
+          # Set the extracted branch name as a GitHub environment variable
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
 
       - name: Checkout to the specified branch
         run: |
           echo "Checking out branch: ${{ env.BRANCH_NAME }}"
           git checkout ${{ env.BRANCH_NAME }}
-
-      - name: Verify current branch
-        run: |
-          CURRENT_BRANCH=$(git branch --show-current)
-          echo "Currently on branch: ${CURRENT_BRANCH}"
-
-          if [ "$CURRENT_BRANCH" != "${{ env.BRANCH_NAME }}" ]; then
-            echo "Error: Failed to checkout the correct branch."
-            exit 1
-          fi
 
       - name: Build project
         run: ./gradle.bootjar
