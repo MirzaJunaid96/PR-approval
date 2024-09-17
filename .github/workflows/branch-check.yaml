@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Output issue body
+      - name: Output issue body (Debug)
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
           echo "Issue URL: ${ISSUE_URL}"
@@ -21,13 +21,38 @@ jobs:
           echo "${ISSUE_BODY}"
 
       - name: Extract branch name
+        id: extract_branch
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
           ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
           echo "Extracting branch from issue body..."
           BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -A 1 '### BRANCH' | tail -n 1 | xargs)
+          
+          if [ -z "$BRANCH_NAME" ]; then
+            echo "Error: Branch name not found in the issue body."
+            exit 1
+          fi
+
           echo "Extracted Branch Name: ${BRANCH_NAME}"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+      - name: Checkout to the specified branch
+        run: |
+          echo "Checking out branch: ${{ env.BRANCH_NAME }}"
+          git checkout ${{ env.BRANCH_NAME }}
+
+      - name: Verify current branch
+        run: |
+          CURRENT_BRANCH=$(git branch --show-current)
+          echo "Currently on branch: ${CURRENT_BRANCH}"
+
+          if [ "$CURRENT_BRANCH" != "${{ env.BRANCH_NAME }}" ]; then
+            echo "Error: Failed to checkout the correct branch."
+            exit 1
+          fi
+
+      - name: Build project
+        run: ./gradle.bootjar
 
       - name: Checkout to the specified branch
         run: git checkout ${{ env.BRANCH_NAME }}
