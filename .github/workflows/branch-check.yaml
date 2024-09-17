@@ -26,8 +26,8 @@ jobs:
           ISSUE_URL="${{ github.event.issue.url }}"
           ISSUE_BODY=$(curl -s -H "Accept: application/vnd.github.v3+json" ${ISSUE_URL} | jq -r '.body')
 
-          # Extract the branch name from the issue body
-          BRANCH_NAME=$(echo "${ISSUE_BODY}" | sed -n '/### BRANCH/{n;p;}' | xargs)
+          # Extract the branch name from the issue body using regex or manual parsing
+          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -Po '(?<=### BRANCH\s*\n)[^\n]*' | xargs)
 
           echo "Extracted Branch Name: ${BRANCH_NAME}"
 
