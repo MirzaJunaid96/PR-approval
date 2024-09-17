@@ -12,18 +12,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Fetch issue details
-        id: fetch_issue
+      - name: Output issue body
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
-          echo "ISSUE_URL=${ISSUE_URL}" >> $GITHUB_ENV
-          BRANCH_NAME=$(curl -s ${ISSUE_URL} | jq -r '.body' | awk '/### BRANCH/{getline; print $0}')
+          echo "Issue URL: ${ISSUE_URL}"
+          ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
+          echo "Issue Body:"
+          echo "${ISSUE_BODY}"
+
+      - name: Extract branch name
+        run: |
+          ISSUE_URL="${{ github.event.issue.url }}"
+          ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
+          echo "Extracting branch from issue body..."
+          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -A 1 '### BRANCH' | tail -n 1 | xargs)
+          echo "Extracted Branch Name: ${BRANCH_NAME}"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
 
       - name: Checkout to the specified branch
         run: git checkout ${{ env.BRANCH_NAME }}
 
-
-      - name: Build project
-        run: |
-          echo "Hello World!"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
