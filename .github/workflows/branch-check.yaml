@@ -16,23 +16,30 @@ jobs:
           ISSUE_URL="${{ github.event.issue.url }}"
           echo "Issue URL: ${ISSUE_URL}"
           ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
-          echo "Issue Body:"
-          echo "${ISSUE_BODY}"
+          echo "Issue Body (for debugging):"
+          echo "${ISSUE_BODY}"  # Print the raw issue body for debugging
 
-      - name: Extract branch name
-        id: extract_branch
+      - name: Extract branch name using sed (Debug)
         run: |
           ISSUE_URL="${{ github.event.issue.url }}"
           ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
-          echo "Extracting branch from issue body..."
-          BRANCH_NAME=$(echo "${ISSUE_BODY}" | awk '/### BRANCH/{getline; print $0}' | xargs)
+
+          # Debug the raw issue body
+          echo "Raw ISSUE_BODY content:"
+          echo "${ISSUE_BODY}"
+
+          # Use sed to extract branch name
+          BRANCH_NAME=$(echo "${ISSUE_BODY}" | sed -n '/### BRANCH/{n;p}' | xargs)
           
+          echo "Extracted Branch Name (for debugging): ${BRANCH_NAME}"
+          
+          # If branch name is empty, raise an error
           if [ -z "$BRANCH_NAME" ]; then
             echo "Error: Branch name not found in the issue body."
             exit 1
           fi
-
-          echo "Extracted Branch Name: ${BRANCH_NAME}"
+          
+          # Set branch name as environment variable
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
 
       - name: Checkout to the specified branch
@@ -54,3 +61,4 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 14
+
