@@ -1,0 +1,28 @@
+name: Deploy from Issue
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # if: ${{ github.event.issue.labels.*.name contains 'deployment' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Fetch issue details
+        id: fetch_issue
+        run: |
+          ISSUE_URL="${{ github.event.issue.url }}"
+          echo "ISSUE_URL=${ISSUE_URL}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$(curl -s ${ISSUE_URL} | jq -r '.body | match("Branch: (.*)") | .captures[0].string')"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+      - name: Checkout to the specified branch
+        run: git checkout ${{ env.BRANCH_NAME }}
+
+      - name: Build project
+        run: |
+          echo "Hello World!"
