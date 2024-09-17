@@ -1,49 +1,53 @@
-name: Deploy from Issue
+name: Deployment Pipeline
 
 on:
   issues:
     types: [opened, edited]
 
 jobs:
-  deploy:
+  deployment:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    # Step 1: Checkout the repository
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+      
+    # Step 2: Extract branch name from the issue body
+    - name: Extract branch name from issue
+      id: extract-branch
+      run: |
+        echo "Extracting branch name from issue..."
+        # Fetch the issue body using GitHub CLI
+        issue_body=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }} | jq -r .body)
 
-      - name: Fetch Issue Details
-        run: |
-          ISSUE_URL="${{ github.event.issue.url }}"
-          echo "Fetching issue body from: ${ISSUE_URL}"
-          ISSUE_BODY=$(curl -s -H "Accept: application/vnd.github.v3+json" ${ISSUE_URL} | jq -r '.body')
-          
-          # Debug: Output the raw issue body
-          echo "Raw issue body:"
-          echo "${ISSUE_BODY}"
+        # Extract the branch name (assuming it's the 'branch' field in your issue template)
+        branch=$(echo "$issue_body" | grep -i "BRANCH" | awk -F': ' '{print $2}' | xargs)
+        echo "Branch: $branch"
+        
+        # Export branch name as an environment variable for future steps
+        echo "::set-output name=branch::$branch"
 
-      - name: Extract branch name
-        run: |
-          ISSUE_URL="${{ github.event.issue.url }}"
-          ISSUE_BODY=$(curl -s -H "Accept: application/vnd.github.v3+json" ${ISSUE_URL} | jq -r '.body')
+    # Step 3: Checkout the branch
+    - name: Checkout branch
+      run: |
+        branch_name=${{ steps.extract-branch.outputs.branch }}
+        echo "Checking out to branch: $branch_name"
+        git fetch origin $branch_name
+        git checkout $branch_name
+        git pull origin $branch_name
 
-          # Extract the branch name from the issue body using regex or manual parsing
-          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -Po '(?<=### BRANCH\s*\n)[^\n]*' | xargs)
-
-          echo "Extracted Branch Name: ${BRANCH_NAME}"
-
-          # Fail if no branch name is found
-          if [ -z "$BRANCH_NAME" ]; then
-            echo "Error: Branch name not found in the issue body."
-            exit 1
-          fi
-          
-          # Set the extracted branch name as a GitHub environment variable
-          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
-
-      - name: Checkout to the specified branch
-        run: |
-          echo "Checking out branch: ${{ env.BRANCH_NAME }}"
-          git checkout ${{ env.BRANCH_NAME }}
-
-      - name: Build project
-        run: ./gradle.bootjar
+    # Step 4: Print the branch name
+    - name: Print checked out branch
+      run: |
+        echo "Currently checked out branch: $(git branch --show-current)"
+        
+    # Step 5: Build the project
+    - name: Build the project
+      run: |
+        echo "Starting build process..."
+        # Insert your build command here, e.g., `npm install && npm run build`
+        # Example (Node.js project):
+        npm install
+        npm run build
