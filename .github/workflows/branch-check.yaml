@@ -25,7 +25,7 @@ jobs:
           ISSUE_URL="${{ github.event.issue.url }}"
           ISSUE_BODY=$(curl -s ${ISSUE_URL} | jq -r '.body')
           echo "Extracting branch from issue body..."
-          BRANCH_NAME=$(echo "${ISSUE_BODY}" | grep -A 1 '### BRANCH' | tail -n 1 | xargs)
+          BRANCH_NAME=$(echo "${ISSUE_BODY}" | awk '/### BRANCH/{getline; print $0}' | xargs)
           
           if [ -z "$BRANCH_NAME" ]; then
             echo "Error: Branch name not found in the issue body."
