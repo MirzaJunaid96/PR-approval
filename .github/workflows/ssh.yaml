@@ -1,0 +1,24 @@
+name: SSH and Execute restart.sh
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  restart-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install SSH Client
+        run: sudo apt-get update && sudo apt-get install -y ssh
+
+      - name: Deploy on server and send slack message
+        env:
+              SSH_PRIVATE: ${{ secrets.SSH_PRIVATE }}
+        run: |
+             echo "$SSH_PRIVATE" > /home/runner/work/PR-approval/PR-approval/key.pem
+             chmod 400 /home/runner/work/PR-approval/PR-approval/key.pem
+             ssh_command="ssh -o StrictHostKeyChecking=no -i /home/runner/work/PR-approval/PR-approval/key.pem ubuntu@ec2-65-2-5-54.ap-south-1.compute.amazonaws.com /home/ubuntu/front.sh
