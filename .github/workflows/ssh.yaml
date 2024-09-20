@@ -21,4 +21,5 @@ jobs:
         run: |
              echo "$SSH_PRIVATE" > /home/runner/work/PR-approval/PR-approval/key.pem
              chmod 400 /home/runner/work/PR-approval/PR-approval/key.pem
-             ssh_command="ssh -o StrictHostKeyChecking=no -i /home/runner/work/PR-approval/PR-approval/key.pem ubuntu@ec2-65-2-5-54.ap-south-1.compute.amazonaws.com "bash front.sh""
+             ssh -o StrictHostKeyChecking=no -i /home/runner/work/PR-approval/PR-approval/key.pem ubuntu@ec2-65-2-5-54.ap-south-1.compute.amazonaws.com "sh front.sh"
+        
