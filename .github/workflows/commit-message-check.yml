@@ -1,0 +1,21 @@
+name: Commit Message Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check_commit_message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check commit messages
+        run: |
+          if git log -1 --pretty=%B | grep -qE '^(feature|fix|bug fix)'; then
+            echo "Commit message is valid."
+          else
+            echo "Error: Your commit message must start with 'feature', 'fix', or 'bug fix'."
+            exit 1
+          fi
